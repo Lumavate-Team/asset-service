@@ -40,6 +40,7 @@ def manage():
 
 @lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=[])
 def file(path):
+  print(path, flush=True)
   if request.method == 'DELETE':
     s3 = boto3.resource('s3')
     prefix = str(g.token_data.get('orgId')) + '/' + g.token_data.get('namespace') + '/'
@@ -53,6 +54,7 @@ def file(path):
   else:
     data = request.get_json()
     contents = data.get('contents')
+    print(data, flush=True)
 
     if contents is not None:
       content_type = 'binary/octet-stream'
@@ -65,6 +67,7 @@ def file(path):
       file = prefix + path + '/'
       s3 = boto3.resource('s3')
       metadata = {'Author': 'j.lawrence@lumavate.com'}
+      print(file, flush=True)
       s3.Object(os.environ.get('BUCKET_NAME'), file + 'draft').put(Body=bytes, Metadata=metadata, ContentType=content_type)
 
     return 'Ok'

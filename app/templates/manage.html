@@ -19,7 +19,7 @@
 
     <!-- ko foreach: files -->
       <div>
-        <span data-bind="text: filename"></span>
+        <span data-bind="text: name"></span>
         <button data-bind="click: $parent.edit">Edit</button>
         <button data-bind="click: $parent.remove">Delete</button>
       </div>
@@ -98,22 +98,16 @@
         }
 
         self.cancelEdit = function(data) {
-          console.log('A');
           self.file(null);
         }
 
         self.edit = function(data) {
-          self.file(data);
+          self.file(new File(data.name));
         }
 
         self.loadAll = function() {
           $.getJSON("/a/b/manage/files", function(response) {
-            files = []
-
-            response.payload.data.forEach(function(e) {
-              files.push(new File(e.name));
-            });
-            vm.files(files);
+            vm.files(response.payload.data);
           });
         }
       }
