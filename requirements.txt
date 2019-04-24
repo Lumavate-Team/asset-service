@@ -1,0 +1,16 @@
+requests
+eventlet
+Flask
+Flask-Redis
+greenlet
+gunicorn
+itsdangerous
+Jinja2
+blinker
+rollbar
+alembic
+sqlalchemy
+sqlalchemy-utils
+flask-sqlalchemy
+psycopg2
+boto3

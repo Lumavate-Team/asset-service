@@ -1,0 +1,128 @@
+<html>
+  <head>
+    <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+  </head>
+  <body>
+
+    <!-- ko with: file -->
+    <div style="position:absolute;top:0px;bottom:0px;left:0px;right:0px;background-color:rgba(0,0,0,.5)">
+      <div style="position:absolute;top:100px;bottom:100px;left:100px;right:100px;background-color:white">
+        <p>Name: <input data-bind="value: filename" /></p>
+        <input data-bind="event: {change: fileUpload}" type="file" class="fileChooser"/>
+        <br>
+        <button data-bind="click: $parent.cancelEdit">Cancel</button>
+        <button data-bind="click: save">Save</button>
+      </div>
+    </div>
+    <!-- /ko -->
+
+    <!-- ko foreach: files -->
+      <div>
+        <span data-bind="text: filename"></span>
+        <button data-bind="click: $parent.edit">Edit</button>
+        <button data-bind="click: $parent.remove">Delete</button>
+      </div>
+
+    <!-- /ko -->
+    <p>New File: <input data-bind="value: newfile" /></p>
+    <button data-bind="click: add">Add</button>
+
+    <script>
+      function File(filename) {
+        self = this;
+        self.filename = filename;
+        self.newfilename = ko.observable(filename);
+        self.contents = ko.observable(null);
+
+        self.save = function(data) {
+          data = {}
+          data.filename = this.newfilename();
+          data.contents = this.contents();
+
+          $.ajax("/a/b/manage/files/" + data.filename, {
+            data : JSON.stringify(data),
+            contentType : 'application/json',
+            type : 'PUT',
+            success: function() {
+              console.log('done')
+            }
+          })
+        }
+
+        this.fileUpload = function(data, e)
+        {
+            var file    = e.target.files[0];
+            var reader  = new FileReader();
+
+            reader.onloadend = function (onloadend_e)
+            {
+               var result = reader.result; // Here is your base 64 encoded file. Do with it what you want.
+               self.contents(result);
+               console.log(self.contents());
+            };
+
+            if(file)
+            {
+                reader.readAsDataURL(file);
+            }
+        };
+      }
+
+      function ViewModel() {
+        var self = this;
+        self.files = ko.observableArray([]);
+        self.showDialog = ko.observable(false);
+        self.newfile = ko.observable('');
+        self.file = ko.observable(null);
+
+        self.add = function() {
+          $.ajax("/a/b/manage/files", {
+            data : JSON.stringify({'file': self.newfile()}),
+            contentType : 'application/json',
+            type : 'POST',
+            success: function() {
+              self.newfile('');
+              self.loadAll();
+            }
+          })
+        }
+
+        self.remove = function(data) {
+          $.ajax("/a/b/manage/files/" + data.filename, {
+            type : 'DELETE',
+            success: function() {
+              self.loadAll();
+            }
+          })
+        }
+
+        self.cancelEdit = function(data) {
+          console.log('A');
+          self.file(null);
+        }
+
+        self.edit = function(data) {
+          self.file(data);
+        }
+
+        self.loadAll = function() {
+          $.getJSON("/a/b/manage/files", function(response) {
+            files = []
+
+            response.payload.data.forEach(function(e) {
+              files.push(new File(e.name));
+            });
+            vm.files(files);
+          });
+        }
+      }
+
+      vm = new ViewModel();
+      ko.applyBindings(vm);
+
+      vm.loadAll();
+
+    </script>
+  </body>
+</html>
