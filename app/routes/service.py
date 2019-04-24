@@ -38,6 +38,12 @@ def files():
 def manage():
   return render_template('manage.html')
 
+@lumavate_route('/discover/manage', ['GET'], RequestType.system, [SecurityType.jwt])
+def discover_manage():
+  return {
+    'context': ['experience']
+  }
+
 @lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=[])
 def file(path):
   print(path, flush=True)
