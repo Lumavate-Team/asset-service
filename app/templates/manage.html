@@ -2,64 +2,116 @@
   <head>
     <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.grey-indigo.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
   </head>
   <body>
 
-    <!-- ko with: file -->
-    <div style="position:absolute;top:0px;bottom:0px;left:0px;right:0px;background-color:rgba(0,0,0,.5)">
-      <div style="position:absolute;top:100px;bottom:100px;left:100px;right:100px;background-color:white">
-        <p>Name: <input data-bind="value: filename" /></p>
-        <input data-bind="event: {change: fileUpload}" type="file" class="fileChooser"/>
-        <br>
-        <button data-bind="click: $parent.cancelEdit">Cancel</button>
-        <button data-bind="click: save">Save</button>
-      </div>
+    <div align='center' style='padding:10px'>
+      <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+        <thead>
+          <tr>
+            <th class="mdl-data-table__cell--non-numeric">File</th>
+            <th class="mdl-data-table__cell--non-numeric">Marked For Deletion</th>
+            <th class="mdl-data-table__cell--non-numeric">Draft Author</th>
+            <th class="mdl-data-table__cell--non-numeric">Draft Content</th>
+            <th class="mdl-data-table__cell--non-numeric">Production Content</th>
+            <th class="mdl-data-table__cell--non-numeric">Production Author</th>
+            <th class="mdl-data-table__cell--non-numeric">URL</th>
+            <th class="mdl-data-table__cell--non-numeric"></th>
+          </tr>
+        </thead>
+        <tbody data-bind="foreach: files">
+          <tr>
+            <td data-bind="text: name" class="mdl-data-table__cell--non-numeric"></td>
+            <td data-bind="" class="mdl-data-table__cell--non-numeric">false</td>
+            <td data-bind="text: draft.author" class="mdl-data-table__cell--non-numeric"></td>
+            <td class="mdl-data-table__cell--non-numeric">
+              <button data-bind="click: $root.openDraft" class="mdl-button mdl-js-button mdl-button--primary">
+                Open
+              </button>
+            </td>
+            <td data-bind="text: production.author" class="mdl-data-table__cell--non-numeric"></td>
+            <td class="mdl-data-table__cell--non-numeric">
+              <button data-bind="click: $root.openProduction" class="mdl-button mdl-js-button mdl-button--primary">
+                Open
+              </button>
+            </td>
+            <td data-bind="text: url" class="mdl-data-table__cell--non-numeric"></td>
+            <td>
+              <button id="demo-menu-lower-right" data-bind="click: $parent.edit"
+                      class="mdl-button mdl-js-button mdl-button--icon">
+                <i class="material-icons">edit</i>
+              </button> 
+              <button id="demo-menu-lower-right" data-bind="click: $parent.remove"
+                      class="mdl-button mdl-js-button mdl-button--icon">
+                <i class="material-icons">delete</i>
+              </button> 
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <!-- /ko -->
 
-    <!-- ko foreach: files -->
-      <div>
-        <span data-bind="text: name"></span>
-        <button data-bind="click: $parent.edit">Edit</button>
-        <button data-bind="click: $parent.remove">Delete</button>
+    <dialog id="edit" data-bind="with: file" class="mdl-dialog" style="width:50%">
+      <h4 class="mdl-dialog__title" data-bind="text: filename"></h4>
+      <div class="mdl-dialog__content">
+          <input data-bind="event: {change: fileUpload}" type="file" class="fileChooser"/>
       </div>
+      <div class="mdl-dialog__actions">
+        <button data-bind="click: $parent.cancelEdit" type="button" class="mdl-button">Cancel</button>
+        <button data-bind="click: $parent.saveEdit" type="button" class="mdl-button close">Save</button>
+      </div>
+    </dialog>
 
-    <!-- /ko -->
-    <p>New File: <input data-bind="value: newfile" /></p>
-    <button data-bind="click: add">Add</button>
+    <dialog id="add" data-bind="with: file" class="mdl-dialog" style="width:50%">
+      <h4 class="mdl-dialog__title">Add File</h4>
+      <div class="mdl-dialog__content">
+					<input data-bind="event: {change: fileUpload}" type="file" class="fileChooser"/>
+          <br>
+          <br>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+						<input data-bind="value: location, event: {focus: $root.labelEvent, input: $root.labelEvent}" class="mdl-textfield__input" type="text" id="location">
+						<label class="mdl-textfield__label" for="location">Location</label>
+					</div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input data-bind="value: newfilename, event: {focus: $root.labelEvent, input: $root.labelEvent}" class="mdl-textfield__input" type="text" id="filename">
+						<label class="mdl-textfield__label" for="filename">Filename</label>
+          </div>
+      </div>
+      <div class="mdl-dialog__actions">
+        <button data-bind="click: $root.cancelAdd" type="button" class="mdl-button">Cancel</button>
+        <button data-bind="click: $root.saveAdd" type="button" class="mdl-button close">Save</button>
+      </div>
+    </dialog>
+
+  <button data-bind="click: add" style="position:absolute;bottom:30px;right:30px" class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
+    <i class="material-icons">add</i>
+  </button>
 
     <script>
       function File(filename) {
         self = this;
         self.filename = filename;
-        self.newfilename = ko.observable(filename);
+        self.location = ko.observable('');
+        self.newfilename = ko.observable('');
+				self.newfiletype = ko.observable('')
         self.contents = ko.observable(null);
 
-        self.save = function(data) {
-          data = {}
-          data.filename = this.newfilename();
-          data.contents = this.contents();
-
-          $.ajax("/a/b/manage/files/" + data.filename, {
-            data : JSON.stringify(data),
-            contentType : 'application/json',
-            type : 'PUT',
-            success: function() {
-              console.log('done')
-            }
-          })
-        }
-
-        this.fileUpload = function(data, e)
-        {
+        this.fileUpload = function(data, e) {
             var file    = e.target.files[0];
             var reader  = new FileReader();
+						self.newfilename(file.name);
+						self.newfiletype(file.type);
+
+						e = $( "#filename" )
+						value = e[0].value;
+						e.parent()[value ? 'addClass' : 'removeClass']('is-dirty');
 
             reader.onloadend = function (onloadend_e)
             {
                var result = reader.result; // Here is your base 64 encoded file. Do with it what you want.
                self.contents(result);
-               console.log(self.contents());
             };
 
             if(file)
@@ -73,23 +125,10 @@
         var self = this;
         self.files = ko.observableArray([]);
         self.showDialog = ko.observable(false);
-        self.newfile = ko.observable('');
         self.file = ko.observable(null);
 
-        self.add = function() {
-          $.ajax("/a/b/manage/files", {
-            data : JSON.stringify({'file': self.newfile()}),
-            contentType : 'application/json',
-            type : 'POST',
-            success: function() {
-              self.newfile('');
-              self.loadAll();
-            }
-          })
-        }
-
         self.remove = function(data) {
-          $.ajax("/a/b/manage/files/" + data.filename, {
+          $.ajax("files/" + data.name, {
             type : 'DELETE',
             success: function() {
               self.loadAll();
@@ -97,16 +136,73 @@
           })
         }
 
+        self.openDraft = function(data) {
+          window.open('files/' + data.name + '/draft');
+        }
+        self.openProduction = function(data) {
+          window.open('files/' + data.name + '/production');
+        }
+
+				self.labelEvent = function(data, e) {
+					value = e.target.value;
+					$(e.target).parent()[value ? 'addClass' : 'removeClass']('is-dirty');
+				}
+
         self.cancelEdit = function(data) {
-          self.file(null);
+          var dialog = document.querySelector('#edit');
+          dialog.close();
         }
 
         self.edit = function(data) {
+          var dialog = document.querySelector('#edit');
+          dialog.showModal();
           self.file(new File(data.name));
         }
 
+        self.saveEdit = function(data) {
+          data = {}
+          data.filename = self.file().newfilename();
+          data.contents = self.file().contents();
+
+          $.ajax("/ic/assets/manage/files/" + data.filename, {
+            data : JSON.stringify(data),
+            contentType : 'application/json',
+            type : 'PUT',
+            success: function() {
+              var dialog = document.querySelector('#edit');
+              dialog.close();
+              console.log('done')
+            }
+          })
+        }
+
+        self.add = function(data) {
+          var dialog = document.querySelector('#add');
+          dialog.showModal();
+          self.file(new File(''));
+        }
+
+        self.cancelAdd = function(data) {
+          var dialog = document.querySelector('#add');
+          dialog.close();
+        }
+
+        self.saveAdd = function() {
+					filename = (self.file().location().replace(/^\/*|\/*$/g, '') + '/' + self.file().newfilename()).replace(/^\/*|\/*$/g, '');
+          $.ajax("/ic/assets/manage/files", {
+            data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
+            contentType : 'application/json',
+            type : 'POST',
+            success: function() {
+              var dialog = document.querySelector('#add');
+              dialog.close();
+              self.loadAll();
+            }
+          })
+        }
+
         self.loadAll = function() {
-          $.getJSON("/a/b/manage/files", function(response) {
+          $.getJSON("files", function(response) {
             vm.files(response.payload.data);
           });
         }
