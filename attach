@@ -2,5 +2,5 @@ docker service update \
  --detach \
  --with-registry-auth \
  --mount-add type=bind,source="$(pwd)"/app,destination=/app \
- assets-110
+ assets-113
 #--mount-add type=bind,source="$(pwd)"/../python-service-util,destination=/python_packages/lumavate_service_util \
