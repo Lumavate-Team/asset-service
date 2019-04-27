@@ -6,9 +6,6 @@ from behavior import Service
 def root():
   return render_template('home.html', logo='/{}/{}/discover/icons/microservice.png'.format(g.integration_cloud, g.widget_type))
 
-@lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
-def file(path):
-  print(path, flush=True)
 
 @lumavate_manage_route('/files', ['POST', 'GET'], RequestType.api, [SecurityType.jwt], required_roles=[])
 def files():
@@ -47,3 +44,7 @@ def production(path):
 @lumavate_route('/discover/properties', ['GET'], RequestType.system, [SecurityType.jwt])
 def properties():
   return Service().do_properties()
+
+@lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
+def file(path):
+  print(path, flush=True)
