@@ -41,7 +41,7 @@ def manage():
 @lumavate_route('/discover/manage', ['GET'], RequestType.system, [SecurityType.jwt])
 def discover_manage():
   return {
-    'context': ['experience']
+    'context': ['experience', 'studio']
   }
 
 @lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=[])
