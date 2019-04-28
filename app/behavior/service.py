@@ -23,7 +23,7 @@ class Service():
     return os.environ.get('BUCKET_NAME')
 
   def get_prefix(self):
-    return str(g.token_data.get('orgId')) + '/' + g.token_data.get('namespace') + '/'
+    return str(g.token_data.get('orgId')) + '/' + str(g.token_data.get('namespace')) + '/'
 
   def get_all(self):
 
@@ -151,8 +151,13 @@ class Service():
     s3 = self.get_s3()
     prefix = self.get_prefix()
     file = prefix + path + '/' + version
+    obj = None
 
-    obj = s3.Object(self.get_bucket(), file).get()
+    try:
+      obj = s3.Object(self.get_bucket(), file).get()
+    except:
+      return None
+
     if obj['ETag'] == request.headers.get('If-None-Match', ''):
       return '', 304
     else:
