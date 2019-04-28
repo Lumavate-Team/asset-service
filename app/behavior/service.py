@@ -11,7 +11,9 @@ import datetime
 class Service():
   def do_properties(self, ic='ic', url_ref='ms'):
     props = []
-    props.append(Properties.Property('Microservice','Microservice Settings', 'adminUI', 'Admin', 'admin-launcher', options=[{'status': ''}]))
+    #status = str(len(self.get_all())) + ' asset(s)'
+    status = ''
+    props.append(Properties.Property('Microservice','Microservice Settings', 'adminUI', 'Admin', 'admin-launcher', options=[{'status': status}]))
     return [x.to_json() for x in props]
 
   def get_s3(self):
@@ -48,13 +50,14 @@ class Service():
 
       file_record = next((x for x in files if x['name'] == file), None)
       if file_record is None:
-        file_record = {'name': file}
+        file_record = {'name': file, 'isDeleted': False}
         files.append(file_record)
 
       file_record['url'] = '/ic/assets/' + file
 
       if raw_file.endswith('/draft'):
         o = s3.Object(self.get_bucket(), obj.key).get()
+        file_record['isDeleted'] = o['Metadata'].get('isdeleted', 'false').lower() == 'true'
         file_record['draft'] = {'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
 
       if raw_file.endswith('/production'):
@@ -89,22 +92,46 @@ class Service():
     s3 = self.get_s3()
 
     metadata = {
-      'Author': g.token_data.get('user'),
-      'ContainerVersionId': str(g.token_data.get('containerVersionId'))
+      'author': g.token_data.get('user'),
+      'containerversionid': str(g.token_data.get('containerVersionId'))
     }
     s3.Object(self.get_bucket(), file).put()
     s3.Object(self.get_bucket(), file + 'draft').put(Body=content, Metadata=metadata, ContentType=content_type)
     s3.Object(self.get_bucket(), file + 'production').put(Body=b'', Metadata=metadata, ContentType=content_type)
     return file
 
-  def delete(self, path):
+  def set_delete_flag(self, path, flag):
     s3 = self.get_s3()
     prefix = self.get_prefix()
     file = prefix + path + '/'
-    s3.Object(self.get_bucket(), file).delete()
-    s3.Object(self.get_bucket(), file + 'draft').delete()
-    s3.Object(self.get_bucket(), file + 'production').delete()
-    return path
+    s3_object = s3.Object(self.get_bucket(), file + 'draft')
+    metadata = {
+      'author': s3_object.get()['Metadata'].get('author'),
+      'containerversionid': str(g.token_data.get('containerVersionId')),
+      'isdeleted': str(flag).lower()
+    }
+    s3_object.copy_from(CopySource={'Bucket':self.get_bucket(), 'Key':file + 'draft'}, Metadata=metadata, MetadataDirective='REPLACE')
+
+  def clear_delete_marker(self, path):
+    self.set_delete_flag(path, False)
+
+  def delete(self, path):
+    self.set_delete_flag(path, True)
+
+  def publish(self):
+    s3 = self.get_s3()
+    prefix = self.get_prefix()
+    files = self.get_all()
+    for f in files:
+      file = prefix + f['name'] + '/'
+      if f['isDeleted']:
+        s3.Object(self.get_bucket(), file).delete()
+        s3.Object(self.get_bucket(), file + 'draft').delete()
+        s3.Object(self.get_bucket(), file + 'production').delete()
+      else:
+        s3.Object(self.get_bucket(),file + 'production').copy_from(CopySource=self.get_bucket() + '/' + file + 'draft')
+
+    return 'Ok'
 
   def put(self, path):
     data = request.get_json()
@@ -126,7 +153,11 @@ class Service():
     file = prefix + path + '/' + version
 
     obj = s3.Object(self.get_bucket(), file).get()
-    contents = obj['Body'].read(obj['ContentLength'])
-    r = make_response(contents)
-    r.headers["Content-Type"] = obj['ContentType']
-    return r
+    if obj['ETag'] == request.headers.get('If-None-Match', ''):
+      return '', 304
+    else:
+      contents = obj['Body'].read(obj['ContentLength'])
+      r = make_response(contents)
+      r.headers["Content-Type"] = obj['ContentType']
+      r.headers['ETag'] = obj['ETag']
+      return r

@@ -25,7 +25,7 @@
         <tbody data-bind="foreach: files">
           <tr>
             <td data-bind="text: name" class="mdl-data-table__cell--non-numeric"></td>
-            <td data-bind="" class="mdl-data-table__cell--non-numeric">false</td>
+            <td data-bind="text: isDeleted" class="mdl-data-table__cell--non-numeric">false</td>
             <td data-bind="text: draft.author" class="mdl-data-table__cell--non-numeric"></td>
             <td class="mdl-data-table__cell--non-numeric">
               <button data-bind="click: $root.openDraft" class="mdl-button mdl-js-button mdl-button--primary">
@@ -164,7 +164,7 @@
           data.filename = self.file().newfilename();
           data.contents = self.file().contents();
 
-          $.ajax("/ic/assets/manage/files/" + data.filename, {
+          $.ajax("/ic/assets/manage/files/" + self.file().filename, {
             data : JSON.stringify(data),
             contentType : 'application/json',
             type : 'PUT',

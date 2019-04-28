@@ -33,6 +33,14 @@ def manage_file(path):
   else:
     return Service().put(path)
 
+@lumavate_manage_route('/files/<path:path>/delete-marker', ['DELETE'], RequestType.api, [SecurityType.jwt], required_roles=[])
+def clear_delete_marker(path):
+  return Service().clear_delete_marker(path)
+
+@lumavate_manage_route('/publish', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=[])
+def publish():
+  return Service().publish()
+
 @lumavate_manage_route('/files/<path:path>/draft', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=[])
 def draft(path):
   return Service().get_contents(path, 'draft')
@@ -47,4 +55,4 @@ def properties():
 
 @lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
 def file(path):
-  print(path, flush=True)
+  return Service().get_contents(path, 'draft')
