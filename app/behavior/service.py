@@ -58,11 +58,11 @@ class Service():
       if raw_file.endswith('/draft'):
         o = s3.Object(self.get_bucket(), obj.key).get()
         file_record['isDeleted'] = o['Metadata'].get('isdeleted', 'false').lower() == 'true'
-        file_record['draft'] = {'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
+        file_record['draft'] = {'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
 
       if raw_file.endswith('/production'):
         o = s3.Object(self.get_bucket(), obj.key).get()
-        file_record['production'] = {'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
+        file_record['production'] = {'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
 
 
     return files
@@ -114,9 +114,11 @@ class Service():
 
   def clear_delete_marker(self, path):
     self.set_delete_flag(path, False)
+    return 'Ok'
 
   def delete(self, path):
     self.set_delete_flag(path, True)
+    return 'Ok'
 
   def publish(self):
     s3 = self.get_s3()
