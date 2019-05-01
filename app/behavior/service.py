@@ -58,11 +58,11 @@ class Service():
       if raw_file.endswith('/draft'):
         o = s3.Object(self.get_bucket(), obj.key).get()
         file_record['isDeleted'] = o['Metadata'].get('isdeleted', 'false').lower() == 'true'
-        file_record['draft'] = {'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
+        file_record['draft'] = {'contentLength': o['ContentLength'], 'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
 
       if raw_file.endswith('/production'):
         o = s3.Object(self.get_bucket(), obj.key).get()
-        file_record['production'] = {'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
+        file_record['production'] = {'contentLength': o['ContentLength'], 'etag': o['ETag'], 'author': o['Metadata']['author'], 'lastModified': o['LastModified'].isoformat()}
 
 
     return files

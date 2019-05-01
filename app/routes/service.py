@@ -37,7 +37,7 @@ def manage_file(path):
 def clear_delete_marker(path):
   return Service().clear_delete_marker(path)
 
-@lumavate_manage_route('/publish', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/on-publish', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=[])
 def publish():
   return Service().publish()
 

@@ -13,25 +13,41 @@
         <thead>
           <tr>
             <th class="mdl-data-table__cell--non-numeric">File</th>
-            <th class="mdl-data-table__cell--non-numeric">Altered</th>
-            <th class="mdl-data-table__cell--non-numeric">Marked For Deletion</th>
-            <th class="mdl-data-table__cell--non-numeric">Draft Author</th>
-            <th class="mdl-data-table__cell--non-numeric">Draft Content</th>
-            <th class="mdl-data-table__cell--non-numeric">Production Content</th>
-            <th class="mdl-data-table__cell--non-numeric">Production Author</th>
+            <th class="mdl-data-table__cell--non-numeric">Published</th>
+            <th class="mdl-data-table__cell--non-numeric">Synced</th>
+            <th class="mdl-data-table__cell--non-numeric">Draft File</th>
+            <th class="mdl-data-table__cell--non-numeric">Production File</th>
             <th class="mdl-data-table__cell--non-numeric">URL</th>
+            <th class="mdl-data-table__cell--non-numeric">Marked For Deletion</th>
             <th class="mdl-data-table__cell--non-numeric"></th>
           </tr>
         </thead>
         <tbody data-bind="foreach: files">
           <tr>
             <td data-bind="text: name" class="mdl-data-table__cell--non-numeric"></td>
-            <!-- ko if: draft.etag != production.etag -->
-            <td class="mdl-data-table__cell--non-numeric">Yes</td>
-            <!-- /ko -->
-            <!-- ko ifnot: draft.etag != production.etag -->
+            <!-- ko if: production.contentLength == 0 -->
             <td class="mdl-data-table__cell--non-numeric">No</td>
             <!-- /ko -->
+						<!-- ko if: production.contentLength > 0 -->
+            <td class="mdl-data-table__cell--non-numeric">Yes</td>
+            <!-- /ko -->
+            <!-- ko if: draft.etag != production.etag -->
+            <td class="mdl-data-table__cell--non-numeric">No</td>
+            <!-- /ko -->
+            <!-- ko ifnot: draft.etag != production.etag -->
+            <td class="mdl-data-table__cell--non-numeric">Yes</td>
+            <!-- /ko -->
+            <td class="mdl-data-table__cell--non-numeric">
+              <button data-bind="click: $root.openDraft" class="mdl-button mdl-js-button mdl-button--primary">
+                Open
+              </button>
+            </td>
+            <td class="mdl-data-table__cell--non-numeric">
+              <button data-bind="click: $root.openProduction" class="mdl-button mdl-js-button mdl-button--primary">
+                Open
+              </button>
+            </td>
+            <td data-bind="text: url" class="mdl-data-table__cell--non-numeric"></td>
             <!-- ko if: isDeleted -->
             <td class="mdl-data-table__cell--non-numeric">
               Yes
@@ -43,19 +59,6 @@
             <!-- ko ifnot: isDeleted -->
             <td class="mdl-data-table__cell--non-numeric">No</td>
             <!-- /ko -->
-            <td data-bind="text: draft.author" class="mdl-data-table__cell--non-numeric"></td>
-            <td class="mdl-data-table__cell--non-numeric">
-              <button data-bind="click: $root.openDraft" class="mdl-button mdl-js-button mdl-button--primary">
-                Open
-              </button>
-            </td>
-            <td data-bind="text: production.author" class="mdl-data-table__cell--non-numeric"></td>
-            <td class="mdl-data-table__cell--non-numeric">
-              <button data-bind="click: $root.openProduction" class="mdl-button mdl-js-button mdl-button--primary">
-                Open
-              </button>
-            </td>
-            <td data-bind="text: url" class="mdl-data-table__cell--non-numeric"></td>
             <td>
               <button id="demo-menu-lower-right" data-bind="click: $parent.edit"
                       class="mdl-button mdl-js-button mdl-button--icon">
@@ -102,12 +105,6 @@
       </div>
     </dialog>
 
-
-  <div align=center style="padding:40px">
-    <button data-bind="click: publish" class="mdl-button mdl-js-button mdl-button--primary">
-      Promote Draft To Prod
-    </button>
-  </div>
   <button data-bind="click: add" style="position:absolute;bottom:30px;right:30px" class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
     <i class="material-icons">add</i>
   </button>
