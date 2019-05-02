@@ -7,14 +7,14 @@ def root():
   return render_template('home.html', logo='/{}/{}/discover/icons/microservice.png'.format(g.integration_cloud, g.widget_type))
 
 
-@lumavate_manage_route('/files', ['POST', 'GET'], RequestType.api, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/files', ['POST', 'GET'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def files():
   if request.method == 'GET':
     return Service().get_all()
   else:
     return Service().post()
 
-@lumavate_manage_route('/', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def manage():
   return render_template('manage.html')
 
@@ -24,7 +24,7 @@ def discover_manage():
     'context': ['experience', 'studio']
   }
 
-@lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def manage_file(path):
   if request.method == 'DELETE':
     return Service().delete(path)
@@ -33,19 +33,19 @@ def manage_file(path):
   else:
     return Service().put(path)
 
-@lumavate_manage_route('/files/<path:path>/delete-marker', ['DELETE'], RequestType.api, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/files/<path:path>/delete-marker', ['DELETE'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def clear_delete_marker(path):
   return Service().clear_delete_marker(path)
 
-@lumavate_manage_route('/on-publish', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/on-publish', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def publish():
   return Service().publish()
 
-@lumavate_manage_route('/files/<path:path>/draft', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/files/<path:path>/draft', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def draft(path):
   return Service().get_contents(path, 'draft')
 
-@lumavate_manage_route('/files/<path:path>/production', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=[])
+@lumavate_manage_route('/files/<path:path>/production', ['GET'], RequestType.page, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def production(path):
   return Service().get_contents(path, 'production')
 
