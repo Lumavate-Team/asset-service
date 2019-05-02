@@ -1,7 +1,10 @@
 # Asset Service
 
-## Build
-  docker build --no-cache -t assets:latest .
+## Commands
+### Build
+`docker build --no-cache -t assets:latest .`
+### Create Version (patch)
+`luma microservice-version add --microservice $urlref --from-version "*.*.*" --patch --docker-image assets:latest`
 
 ## Ports
   Container Port = 5000
