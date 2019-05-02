@@ -1,5 +1,8 @@
 # Asset Service
 
+## Build
+  docker build --no-cache -t assets:latest .
+
 ## Ports
   Container Port = 5000
 
