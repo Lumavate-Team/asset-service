@@ -1,5 +1,8 @@
 # Asset Service
 
+## Ports
+  Container Port = 5000
+
 ## Environment Variables
 | Name  | Value |
 | ------------- | ------------- |
