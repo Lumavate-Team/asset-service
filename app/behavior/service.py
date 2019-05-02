@@ -17,7 +17,7 @@ class Service():
     return [x.to_json() for x in props]
 
   def get_s3(self):
-    return boto3.resource('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY'), aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
+    return boto3.resource('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
 
   def get_bucket(self):
     return os.environ.get('BUCKET_NAME')
