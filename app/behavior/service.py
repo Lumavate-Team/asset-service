@@ -117,8 +117,22 @@ class Service():
     return 'Ok'
 
   def delete(self, path):
-    self.set_delete_flag(path, True)
-    return 'Ok'
+    files = self.get_all()
+    file = next((x for x in files if x['name'] == path), None)
+    if file is None:
+      return None
+
+    if file['production']['contentLength'] == 0:
+      s3 = self.get_s3()
+      prefix = self.get_prefix()
+      file = prefix + path + '/'
+      s3.Object(self.get_bucket(), file).delete()
+      s3.Object(self.get_bucket(), file + 'draft').delete()
+      s3.Object(self.get_bucket(), file + 'production').delete()
+    else:
+      self.set_delete_flag(path, True)
+
+    return file
 
   def publish(self):
     s3 = self.get_s3()
