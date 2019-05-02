@@ -1,8 +1,15 @@
 # Asset Service
 
+## Environment Variables
+| Name  | Value |
+| ------------- | ------------- |
+| AWS_ACCESS_KEY_ID  | AWS Access Key Id *Should only provide access to read / write to BUCKET_NAME*  |
+| AWS_SECRET_ACCESS_KEY  | AWS Secret Access Key  |
+| BUCKET_NAME  | Name of AWS bucket that will store the assets  |
+
 ## Routes
 
-### Route: /<path:file>
+### Route: /{path}
 
 #### Call: GET
 
