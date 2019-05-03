@@ -6,7 +6,7 @@
 ### Create Version (patch)
 `luma microservice-version add -ms assets --from-version "*.*.*" --patch --docker-image assets:latest`
 ### Start Version
-`luma microservice-version start`
+`luma microservice-version start -ms assets`
 
 ## Ports
   Container Port = 5000
