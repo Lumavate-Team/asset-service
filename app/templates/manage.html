@@ -42,7 +42,7 @@
                 Open
               </button>
             </td>
-            <td class="mdl-data-table__cell--non-numeric">
+            <td class="mdl-data-table__cell--non-numeric" data-bind="if: production.contentLength > 0">
               <button data-bind="click: $root.openProduction" class="mdl-button mdl-js-button mdl-button--primary">
                 Open
               </button>
@@ -80,7 +80,7 @@
       </div>
       <div class="mdl-dialog__actions">
         <button data-bind="click: $parent.cancelEdit" type="button" class="mdl-button">Cancel</button>
-        <button data-bind="click: $parent.saveEdit" type="button" class="mdl-button close">Save</button>
+        <button data-bind="click: $parent.saveEdit, attr: {disabled: contents() == null}" type="button" class="mdl-button close">Save</button>
       </div>
     </dialog>
 
@@ -101,9 +101,14 @@
       </div>
       <div class="mdl-dialog__actions">
         <button data-bind="click: $root.cancelAdd" type="button" class="mdl-button">Cancel</button>
-        <button data-bind="click: $root.saveAdd" type="button" class="mdl-button close">Save</button>
+        <button data-bind="click: $root.saveAdd, attr: {disabled: contents() == null || newfilename() == ''}" type="button" class="mdl-button close">Save</button>
       </div>
     </dialog>
+
+  <div id="error-toast" class="mdl-js-snackbar mdl-snackbar">
+    <div class="mdl-snackbar__text"></div>
+    <button class="mdl-snackbar__action" type="button"></button>
+  </div>
 
   <button data-bind="click: add" style="position:absolute;bottom:30px;right:30px" class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
     <i class="material-icons">add</i>
@@ -237,6 +242,15 @@
               var dialog = document.querySelector('#add');
               dialog.close();
               self.loadAll();
+            },
+            error: function(r) {
+              message = 'Error adding file';
+              if (r.status == 400) {
+                message = r.responseJSON.error;
+              }
+              var snackbarContainer = document.querySelector('#error-toast');
+              var data = {message: message};
+              snackbarContainer.MaterialSnackbar.showSnackbar(data);
             }
           })
         }

@@ -88,6 +88,10 @@ class Service():
   def post(self):
     prefix = self.get_prefix()
     file = prefix + request.get_json()['file'] + '/'
+    files = self.get_all()
+    if next((x for x in files if x['name'] == request.get_json()['file']), None) is not None:
+      raise ValidationException('File already exists')
+
     content, content_type = self.read_content()
     s3 = self.get_s3()
 
