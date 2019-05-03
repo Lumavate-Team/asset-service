@@ -4,7 +4,7 @@
 ### Build
 `docker build --no-cache -t assets:latest .`
 ### Create Version (patch)
-`luma microservice-version add --ms assets --from-version "*.*.*" --patch --docker-image assets:latest`
+`luma microservice-version add -ms assets --from-version "*.*.*" --patch --docker-image assets:latest`
 ### Start Version
 `luma microservice-version start`
 
