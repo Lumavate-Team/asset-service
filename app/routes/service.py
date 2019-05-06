@@ -53,6 +53,10 @@ def production(path):
 def properties():
   return Service().do_properties()
 
+@lumavate_route('/files', ['GET'], RequestType.api, [SecurityType.jwt])
+def files(path):
+  return None
+
 @lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
 def file(path):
   return Service().get_contents(path, 'draft')
