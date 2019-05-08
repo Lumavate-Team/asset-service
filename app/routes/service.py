@@ -54,7 +54,7 @@ def properties():
   return Service().do_properties()
 
 @lumavate_route('/files', ['GET'], RequestType.api, [SecurityType.jwt])
-def files(path):
+def get_files(path):
   return None
 
 @lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
