@@ -54,9 +54,24 @@ def properties():
   return Service().do_properties()
 
 @lumavate_route('/files', ['GET'], RequestType.api, [SecurityType.jwt])
-def get_files(path):
-  return None
+def get_files():
+  files = Service().get_all()
+  for f in files:
+    if g.token_data['version'] == 'production':
+      f.update(f['production'])
+    else:
+      f.update(f['draft'])
+
+    f.pop('draft')
+    f.pop('production')
+
+  return files
 
 @lumavate_route('/<path:path>', ['GET'], RequestType.page, [SecurityType.jwt])
 def file(path):
-  return Service().get_contents(path, 'draft')
+  print(path, flush=True)
+  v = 'production'
+  if g.token_data['version'] != 'production':
+    v = 'draft'
+
+  return Service().get_contents(path, v)
