@@ -8,7 +8,7 @@
 ### Start Version
 `luma microservice-version start -ms assets`
 ### List all versions
-` luma microservice-version ls -ms assets
+`luma microservice-version ls -ms assets`
 
 ## Ports
   Container Port = 5000
