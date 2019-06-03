@@ -3,11 +3,11 @@
     <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.grey-indigo.min.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
   </head>
   <body>
-
     <div align='center' style='padding:10px'>
       <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
         <thead>
@@ -60,11 +60,11 @@
             <td class="mdl-data-table__cell--non-numeric">No</td>
             <!-- /ko -->
             <td>
-              <button id="demo-menu-lower-right" data-bind="click: $parent.edit"
+              <button id="demo-menu-lower-right" data-bind="click: $parent.edit, enable: !pending()"
                       class="mdl-button mdl-js-button mdl-button--icon">
                 <i class="material-icons">edit</i>
               </button>
-              <button id="demo-menu-lower-right" data-bind="click: $parent.remove"
+              <button id="demo-menu-lower-right" data-bind="click: $parent.remove, enable: !pending()"
                       class="mdl-button mdl-js-button mdl-button--icon">
                 <i class="material-icons">delete</i>
               </button>
@@ -80,7 +80,7 @@
       </div>
       <div class="mdl-dialog__actions">
         <button data-bind="click: $parent.cancelEdit" type="button" class="mdl-button">Cancel</button>
-        <button data-bind="click: $parent.saveEdit, attr: {disabled: contents() == null}" type="button" class="mdl-button close">Save</button>
+        <button data-bind="click: $parent.saveEdit, attr: {disabled: contents() == null || pending()}" type="button" class="mdl-button close">Save</button>
       </div>
     </dialog>
 
@@ -101,7 +101,7 @@
       </div>
       <div class="mdl-dialog__actions">
         <button data-bind="click: $root.cancelAdd" type="button" class="mdl-button">Cancel</button>
-        <button data-bind="click: $root.saveAdd, attr: {disabled: contents() == null || newfilename() == ''}" type="button" class="mdl-button close">Save</button>
+        <button data-bind="click: $root.saveAdd, attr: {disabled: contents() == null || newfilename() == '' || pending()}" type="button" class="mdl-button close">Save</button>
       </div>
     </dialog>
 
@@ -110,9 +110,11 @@
     <button class="mdl-snackbar__action" type="button"></button>
   </div>
 
-  <button data-bind="click: add" style="position:absolute;bottom:30px;right:30px" class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
+  <button data-bind="click: add" style="position:fixed;bottom:30px;right:30px;background-color: rgb(41,81, 109); color: rgb(255, 255, 255);" class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
     <i class="material-icons">add</i>
   </button>
+
+
 
     <script>
       function File(filename) {
@@ -122,6 +124,8 @@
         self.newfilename = ko.observable('');
         self.newfiletype = ko.observable('')
         self.contents = ko.observable(null);
+
+        self.pending = ko.observable(false);
 
         this.fileUpload = function(data, e) {
             var file    = e.target.files[0];
@@ -152,7 +156,9 @@
         self.showDialog = ko.observable(false);
         self.file = ko.observable(null);
 
+
         self.remove = function(data) {
+          data.pending(true);
           $.ajax("files/" + data.name, {
             type : 'DELETE',
             success: function() {
@@ -170,11 +176,15 @@
 
         self.clearDelete = function(data) {
           file = 'files/' + data.name + '/delete-marker'
+          data.pending(true);
 
           $.ajax("/ic/assets/manage/" + file, {
             type : 'DELETE',
             success: function() {
               self.loadAll();
+            },
+            complete: function() {
+              data.pending(false);
             }
           })
         }
@@ -204,11 +214,11 @@
           self.file(new File(data.name));
         }
 
-        self.saveEdit = function(data) {
+        self.saveEdit = function(sdata) {
           data = {}
           data.filename = self.file().newfilename();
           data.contents = self.file().contents();
-
+          sdata.pending(true);
           $.ajax("/ic/assets/manage/files/" + self.file().filename, {
             data : JSON.stringify(data),
             contentType : 'application/json',
@@ -217,6 +227,9 @@
               var dialog = document.querySelector('#edit');
               dialog.close();
               self.loadAll();
+            },
+            complete: function() {
+              sdata.pending(false);
             }
           })
         }
@@ -232,7 +245,8 @@
           dialog.close();
         }
 
-        self.saveAdd = function() {
+        self.saveAdd = function(sdata) {
+          sdata.pending(true)
           filename = (self.file().location().replace(/^\/*|\/*$/g, '') + '/' + self.file().newfilename()).replace(/^\/*|\/*$/g, '');
           $.ajax("/ic/assets/manage/files", {
             data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
@@ -251,12 +265,33 @@
               var snackbarContainer = document.querySelector('#error-toast');
               var data = {message: message};
               snackbarContainer.MaterialSnackbar.showSnackbar(data);
+            },
+            complete: function() {
+              sdata.pending(false);
             }
           })
         }
 
+        self.preservables = []
         self.loadAll = function() {
           $.getJSON("files", function(response) {
+            newpres = []
+            response.payload.data.forEach(function(element){
+              pend = null
+              console.log(element.name,self.preservables)
+              self.preservables.forEach(function(preserve){
+                if (preserve.name == element.name) {
+                  pend = preserve.pending
+                  console.log("replicated");
+                }
+              })
+              if (pend == null) {
+                pend = ko.observable(false);
+              }
+              newpres.push({"name":element.name,"pending":pend});
+              element.pending = pend
+            })
+            self.preservables = newpres
             vm.files(response.payload.data);
           });
         }

@@ -50,7 +50,10 @@ class Service():
 
       file_record = next((x for x in files if x['name'] == file), None)
       if file_record is None:
-        file_record = {'name': file, 'isDeleted': False}
+        file_record = {'name': file, 'isDeleted': False,
+          "draft":      {'contentLength': 0, 'etag': "", 'author': "", 'lastModified': ""},
+          "production": {'contentLength': 0, 'etag': "", 'author': "", 'lastModified': ""}
+        }
         files.append(file_record)
 
       file_record['url'] = '/ic/assets/' + file

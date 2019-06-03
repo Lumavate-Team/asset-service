@@ -1,0 +1,1 @@
+docker build --no-cache --rm -f DockerfileDev -t saml:editable .
