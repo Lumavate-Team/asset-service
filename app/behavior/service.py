@@ -7,6 +7,8 @@ import os
 import json
 import base64
 import datetime
+from ua_parser import user_agent_parser
+from jinja2 import Environment, BaseLoader
 
 class Service():
   def do_properties(self, ic='ic', url_ref='ms'):
@@ -175,11 +177,40 @@ class Service():
     prefix = self.get_prefix()
     file = prefix + path + '/' + version
     obj = None
+    should_translate = False
 
     try:
       obj = s3.Object(self.get_bucket(), file).get()
     except:
-      return None
+      pass
+
+    if obj is None:
+      file = prefix + path + ".j2/" + version
+
+      try:
+        print(file, flush=True)
+        obj = s3.Object(self.get_bucket(), file).get()
+
+        if obj['ETag'] == request.headers.get('If-None-Match', ''):
+          return '', 304
+        else:
+          contents = obj['Body'].read(obj['ContentLength']).decode('UTF-8')
+          user_agent_string = request.headers.get('User-Agent')
+          parsed_user_agent = user_agent_parser.Parse(user_agent_string)
+          j2_dict = {}
+          j2_dict['userAgent'] = parsed_user_agent
+          jinja_env = Environment(loader=BaseLoader)
+
+          
+          template = jinja_env.from_string(contents)
+          parsed_contents = template.render(**j2_dict)                  
+
+          r = make_response(parsed_contents)
+          r.headers["Content-Type"] = obj['ContentType']
+          r.headers['ETag'] = obj['ETag']
+          return r
+      except Exception as e: 
+        return None
 
     if obj['ETag'] == request.headers.get('If-None-Match', ''):
       return '', 304

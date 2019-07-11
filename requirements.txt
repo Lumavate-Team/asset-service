@@ -14,3 +14,4 @@ sqlalchemy-utils
 flask-sqlalchemy
 psycopg2
 boto3
+ua-parser
