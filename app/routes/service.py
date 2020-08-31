@@ -25,8 +25,12 @@ def discover_manage():
   }
 
 @lumavate_manage_route('/files/signed-url', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
-def get_signed_url():
+def get_signed_post_url():
   return Service().get_presign_url('POST')
+
+@lumavate_manage_route('/files/signed-url/<path:path>', ['PUT'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
+def get_signed_put_url(path):
+  return Service().get_presign_url('PUT', path)
 
 @lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def manage_file(path):

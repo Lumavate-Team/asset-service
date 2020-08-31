@@ -175,13 +175,19 @@ class Service():
 
     return 'Ok'
 
-  def get_presign_url(self, method):
+  def get_presign_url(self, method, path=''):
+
     content_type = request.get_json()['contentType']
     prefix = self.get_prefix()
-    file = prefix + request.get_json()['file'] + '/'
-    files = self.get_all()
-    if next((x for x in files if x['name'] == request.get_json()['file']), None) is not None:
-      raise ValidationException('File already exists')
+    file = ''
+
+    if method == 'POST':
+      file = prefix + request.get_json()['file'] + '/'
+      files = self.get_all()
+      if next((x for x in files if x['name'] == request.get_json()['file']), None) is not None:
+        raise ValidationException('File already exists')
+    else:
+      file = prefix + path + '/'
 
     s3_client =  self.get_s3_client()
     metadata = {
@@ -206,9 +212,11 @@ class Service():
         ExpiresIn=60*15)
 
     #go ahead and create folder and empty production version
-    s3 = self.get_s3()
-    s3.Object(self.get_bucket(), file).put()
-    s3.Object(self.get_bucket(), file + 'production').put(Body=b'', Metadata=metadata, ContentType=content_type)
+    if method == 'POST':
+      s3 = self.get_s3()
+      s3.Object(self.get_bucket(), file).put()
+      s3.Object(self.get_bucket(), file + 'production').put(Body=b'', Metadata=metadata, ContentType=content_type)
+
     return response
 
   def get_file(self,s3, file, max_size=5000000):
@@ -217,20 +225,17 @@ class Service():
     obj = None
 
     try:
-      print(file, flush=True)
       obj = s3_client.head_object(Bucket=self.get_bucket(), Key=file)
-      print(obj, flush=True)
     except: 
       pass
 
     if obj is None:
       return None
     else:
-      # if obj['ETag'] == request.headers.get('If-None-Match', ''):
-      #   res_file['match'] = True
-      #   return res_file
-      print(obj, flush=True)
-      print(obj.get('ContentLength'), flush=True)
+      if obj['ETag'] == request.headers.get('If-None-Match', ''):
+        res_file['match'] = True
+        return res_file
+
       if max_size is not None and obj.get('ContentLength', 0) > max_size:
         try:
           response = s3_client.generate_presigned_url('get_object',
@@ -241,7 +246,6 @@ class Service():
             HttpMethod="GET",
             ExpiresIn=30)
 
-          print(response, flush=True)
           res_file['url'] = response
           return res_file
         except:
@@ -291,8 +295,8 @@ class Service():
       except Exception as e: 
         return None
 
-    # if file_obj.get('match', False):
-    #   return '', 304
+    elif file_obj.get('match', False):
+      return '', 304
     elif file_obj.get('url', None) is not None:
       return redirect(file_obj.get('url'), 302)
     else:

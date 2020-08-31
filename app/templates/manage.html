@@ -125,7 +125,7 @@
         self.newfiletype = ko.observable('');
         self.newfilesize = ko.observable(0);
         self.contents = ko.observable(null);
-        self.contents_2 = ko.observable(null);
+        self.fileContents = ko.observable(null);
         self.pending = ko.observable(false);
 
         this.fileUpload = function(data, e) {
@@ -134,7 +134,7 @@
             self.newfilename(file.name);
             self.newfiletype(file.type);
             self.newfilesize(file.size);
-            self.contents_2(file);
+            self.fileContents(file);
             e = $( "#filename" )
             value = e[0].value;
             e.parent()[value ? 'addClass' : 'removeClass']('is-dirty');
@@ -237,7 +237,35 @@
               }
             })
           } else{
-            //Put presigne url route here
+            $.ajax("/ic/assets/manage/files/signed-url/" + self.file().filename, {
+              data : JSON.stringify({'contentType': self.file().newfiletype()}),
+              contentType : 'application/json',
+              type : 'PUT',
+              success: function(response) {
+                let formData = new FormData();
+
+                Object.keys(response.payload.data.fields)
+                  .forEach((field)=>{
+                    formData.append(field, response.payload.data.fields[field]);
+                  });
+                formData.append('success_action_status',201);
+                formData.append('Content-Type', self.file().newfiletype());
+                formData.append('file', self.file().fileContents());
+                let options = {
+                  method: 'post',
+                  body: formData,
+                  mode: 'no-cors'
+                };
+                fetch(response.payload.data.url, options).then(function(){
+                  sdata.pending(false);
+                  var dialog = document.querySelector('#edit');
+                  dialog.close();
+                });
+              },
+              complete: function() {
+                self.loadAll();
+              }
+            })
           }
         }
 
@@ -294,13 +322,18 @@
                   });
                 formData.append('success_action_status',201);
                 formData.append('Content-Type', self.file().newfiletype());
-                formData.append('file', self.file().contents_2());
+                formData.append('file', self.file().fileContents());
                 let options = {
                   method: 'post',
                   body: formData,
                   mode: 'no-cors'
                 };
-                fetch(response.payload.data.url, options);
+                fetch(response.payload.data.url, options).then(function(){
+                  var dialog = document.querySelector('#add');
+                  dialog.close();
+                  self.loadAll();
+                  sdata.pending(false);
+                });
               },
               error: function(r) {
                 message = 'Error adding file';
@@ -312,10 +345,6 @@
                 snackbarContainer.MaterialSnackbar.showSnackbar(data);  
               },
               complete: function() {
-                var dialog = document.querySelector('#add');
-                dialog.close();
-                self.loadAll();
-                sdata.pending(false);
               }
             })
           }
