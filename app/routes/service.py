@@ -24,6 +24,10 @@ def discover_manage():
     'context': ['experience', 'studio']
   }
 
+@lumavate_manage_route('/files/signed-url', ['POST'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
+def get_signed_url():
+  return Service().get_presign_url('POST')
+
 @lumavate_manage_route('/files/<path:path>', ['DELETE', 'GET', 'PUT'], RequestType.api, [SecurityType.jwt], required_roles=['admin', 'collaborator'])
 def manage_file(path):
   if request.method == 'DELETE':

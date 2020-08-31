@@ -122,9 +122,10 @@
         self.filename = filename;
         self.location = ko.observable('');
         self.newfilename = ko.observable('');
-        self.newfiletype = ko.observable('')
+        self.newfiletype = ko.observable('');
+        self.newfilesize = ko.observable(0);
         self.contents = ko.observable(null);
-
+        self.contents_2 = ko.observable(null);
         self.pending = ko.observable(false);
 
         this.fileUpload = function(data, e) {
@@ -132,7 +133,8 @@
             var reader  = new FileReader();
             self.newfilename(file.name);
             self.newfiletype(file.type);
-
+            self.newfilesize(file.size);
+            self.contents_2(file);
             e = $( "#filename" )
             value = e[0].value;
             e.parent()[value ? 'addClass' : 'removeClass']('is-dirty');
@@ -219,19 +221,24 @@
           data.filename = self.file().newfilename();
           data.contents = self.file().contents();
           sdata.pending(true);
-          $.ajax("/ic/assets/manage/files/" + self.file().filename, {
-            data : JSON.stringify(data),
-            contentType : 'application/json',
-            type : 'PUT',
-            success: function() {
-              var dialog = document.querySelector('#edit');
-              dialog.close();
-              self.loadAll();
-            },
-            complete: function() {
-              sdata.pending(false);
-            }
-          })
+          fileSize = self.file().newfilesize();
+          if(fileSize < 5000000){
+            $.ajax("/ic/assets/manage/files/" + self.file().filename, {
+              data : JSON.stringify(data),
+              contentType : 'application/json',
+              type : 'PUT',
+              success: function() {
+                var dialog = document.querySelector('#edit');
+                dialog.close();
+                self.loadAll();
+              },
+              complete: function() {
+                sdata.pending(false);
+              }
+            })
+          } else{
+            //Put presigne url route here
+          }
         }
 
         self.add = function(data) {
@@ -248,28 +255,70 @@
         self.saveAdd = function(sdata) {
           sdata.pending(true)
           filename = (self.file().location().replace(/^\/*|\/*$/g, '') + '/' + self.file().newfilename()).replace(/^\/*|\/*$/g, '');
-          $.ajax("/ic/assets/manage/files", {
-            data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
-            contentType : 'application/json',
-            type : 'POST',
-            success: function() {
-              var dialog = document.querySelector('#add');
-              dialog.close();
-              self.loadAll();
-            },
-            error: function(r) {
-              message = 'Error adding file';
-              if (r.status == 400) {
-                message = r.responseJSON.error;
+          fileSize = self.file().newfilesize();
+          if(fileSize < 5000000){
+            $.ajax("/ic/assets/manage/files", {
+              data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
+              contentType : 'application/json',
+              type : 'POST',
+              success: function() {
+                var dialog = document.querySelector('#add');
+                dialog.close();
+                self.loadAll();
+              },
+              error: function(r) {
+                message = 'Error adding file';
+                if (r.status == 400) {
+                  message = r.responseJSON.error;
+                }
+                var snackbarContainer = document.querySelector('#error-toast');
+                var data = {message: message};
+                snackbarContainer.MaterialSnackbar.showSnackbar(data);
+              },
+              complete: function() {
+                sdata.pending(false);
               }
-              var snackbarContainer = document.querySelector('#error-toast');
-              var data = {message: message};
-              snackbarContainer.MaterialSnackbar.showSnackbar(data);
-            },
-            complete: function() {
-              sdata.pending(false);
-            }
-          })
+            })
+          }
+          else {
+            $.ajax("/ic/assets/manage/files/signed-url", {
+              data : JSON.stringify({'file':filename, 'contentType': self.file().newfiletype()}),
+              contentType : 'application/json',
+              type : 'POST',
+              success: function(response){
+                let formData = new FormData();
+
+                Object.keys(response.payload.data.fields)
+                  .forEach((field)=>{
+                    formData.append(field, response.payload.data.fields[field]);
+                  });
+                formData.append('success_action_status',201);
+                formData.append('Content-Type', self.file().newfiletype());
+                formData.append('file', self.file().contents_2());
+                let options = {
+                  method: 'post',
+                  body: formData,
+                  mode: 'no-cors'
+                };
+                fetch(response.payload.data.url, options);
+              },
+              error: function(r) {
+                message = 'Error adding file';
+                if (r.status == 400) {
+                  message = r.responseJSON.error;
+                }
+                var snackbarContainer = document.querySelector('#error-toast');
+                var data = {message: message};
+                snackbarContainer.MaterialSnackbar.showSnackbar(data);  
+              },
+              complete: function() {
+                var dialog = document.querySelector('#add');
+                dialog.close();
+                self.loadAll();
+                sdata.pending(false);
+              }
+            })
+          }
         }
 
         self.preservables = []
