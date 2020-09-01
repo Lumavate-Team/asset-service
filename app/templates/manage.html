@@ -222,7 +222,7 @@
           data.contents = self.file().contents();
           sdata.pending(true);
           fileSize = self.file().newfilesize();
-          if(fileSize < 5000000){
+          if(fileSize < 5242880){
             $.ajax("/ic/assets/manage/files/" + self.file().filename, {
               data : JSON.stringify(data),
               contentType : 'application/json',
@@ -284,7 +284,7 @@
           sdata.pending(true)
           filename = (self.file().location().replace(/^\/*|\/*$/g, '') + '/' + self.file().newfilename()).replace(/^\/*|\/*$/g, '');
           fileSize = self.file().newfilesize();
-          if(fileSize < 5000000){
+          if(fileSize < 5242880){
             $.ajax("/ic/assets/manage/files", {
               data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
               contentType : 'application/json',

@@ -219,7 +219,7 @@ class Service():
 
     return response
 
-  def get_file(self,s3, file, max_size=5000000):
+  def get_file(self,s3, file, max_size=5242880):
     res_file = {}
     s3_client = self.get_s3_client()
     obj = None
