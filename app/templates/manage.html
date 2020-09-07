@@ -221,52 +221,35 @@
           data.filename = self.file().newfilename();
           data.contents = self.file().contents();
           sdata.pending(true);
-          fileSize = self.file().newfilesize();
-          if(fileSize < 5242880){
-            $.ajax("/ic/assets/manage/files/" + self.file().filename, {
-              data : JSON.stringify(data),
-              contentType : 'application/json',
-              type : 'PUT',
-              success: function() {
+          $.ajax("/ic/assets/manage/files/signed-url/" + self.file().filename, {
+            data : JSON.stringify({'contentType': self.file().newfiletype()}),
+            contentType : 'application/json',
+            type : 'PUT',
+            success: function(response) {
+              let formData = new FormData();
+
+              Object.keys(response.payload.data.fields)
+                .forEach((field)=>{
+                  formData.append(field, response.payload.data.fields[field]);
+                });
+              formData.append('success_action_status',201);
+              formData.append('Content-Type', self.file().newfiletype());
+              formData.append('file', self.file().fileContents());
+              let options = {
+                method: 'post',
+                body: formData,
+                mode: 'no-cors'
+              };
+              fetch(response.payload.data.url, options).then(function(){
+                sdata.pending(false);
                 var dialog = document.querySelector('#edit');
                 dialog.close();
-                self.loadAll();
-              },
-              complete: function() {
-                sdata.pending(false);
-              }
-            })
-          } else{
-            $.ajax("/ic/assets/manage/files/signed-url/" + self.file().filename, {
-              data : JSON.stringify({'contentType': self.file().newfiletype()}),
-              contentType : 'application/json',
-              type : 'PUT',
-              success: function(response) {
-                let formData = new FormData();
-
-                Object.keys(response.payload.data.fields)
-                  .forEach((field)=>{
-                    formData.append(field, response.payload.data.fields[field]);
-                  });
-                formData.append('success_action_status',201);
-                formData.append('Content-Type', self.file().newfiletype());
-                formData.append('file', self.file().fileContents());
-                let options = {
-                  method: 'post',
-                  body: formData,
-                  mode: 'no-cors'
-                };
-                fetch(response.payload.data.url, options).then(function(){
-                  sdata.pending(false);
-                  var dialog = document.querySelector('#edit');
-                  dialog.close();
-                });
-              },
-              complete: function() {
-                self.loadAll();
-              }
-            })
-          }
+              });
+            },
+            complete: function() {
+              self.loadAll();
+            }
+          })
         }
 
         self.add = function(data) {
@@ -284,70 +267,44 @@
           sdata.pending(true)
           filename = (self.file().location().replace(/^\/*|\/*$/g, '') + '/' + self.file().newfilename()).replace(/^\/*|\/*$/g, '');
           fileSize = self.file().newfilesize();
-          if(fileSize < 5242880){
-            $.ajax("/ic/assets/manage/files", {
-              data : JSON.stringify({'file': filename, 'contents': self.file().contents()}),
-              contentType : 'application/json',
-              type : 'POST',
-              success: function() {
+          $.ajax("/ic/assets/manage/files/signed-url", {
+            data : JSON.stringify({'file':filename, 'contentType': self.file().newfiletype()}),
+            contentType : 'application/json',
+            type : 'POST',
+            success: function(response){
+              let formData = new FormData();
+
+              Object.keys(response.payload.data.fields)
+                .forEach((field)=>{
+                  formData.append(field, response.payload.data.fields[field]);
+                });
+              formData.append('success_action_status',201);
+              formData.append('Content-Type', self.file().newfiletype());
+              formData.append('file', self.file().fileContents());
+              let options = {
+                method: 'post',
+                body: formData,
+                mode: 'no-cors'
+              };
+              fetch(response.payload.data.url, options).then(function(){
                 var dialog = document.querySelector('#add');
                 dialog.close();
                 self.loadAll();
-              },
-              error: function(r) {
-                message = 'Error adding file';
-                if (r.status == 400) {
-                  message = r.responseJSON.error;
-                }
-                var snackbarContainer = document.querySelector('#error-toast');
-                var data = {message: message};
-                snackbarContainer.MaterialSnackbar.showSnackbar(data);
-              },
-              complete: function() {
                 sdata.pending(false);
+              });
+            },
+            error: function(r) {
+              message = 'Error adding file';
+              if (r.status == 400) {
+                message = r.responseJSON.error;
               }
-            })
-          }
-          else {
-            $.ajax("/ic/assets/manage/files/signed-url", {
-              data : JSON.stringify({'file':filename, 'contentType': self.file().newfiletype()}),
-              contentType : 'application/json',
-              type : 'POST',
-              success: function(response){
-                let formData = new FormData();
-
-                Object.keys(response.payload.data.fields)
-                  .forEach((field)=>{
-                    formData.append(field, response.payload.data.fields[field]);
-                  });
-                formData.append('success_action_status',201);
-                formData.append('Content-Type', self.file().newfiletype());
-                formData.append('file', self.file().fileContents());
-                let options = {
-                  method: 'post',
-                  body: formData,
-                  mode: 'no-cors'
-                };
-                fetch(response.payload.data.url, options).then(function(){
-                  var dialog = document.querySelector('#add');
-                  dialog.close();
-                  self.loadAll();
-                  sdata.pending(false);
-                });
-              },
-              error: function(r) {
-                message = 'Error adding file';
-                if (r.status == 400) {
-                  message = r.responseJSON.error;
-                }
-                var snackbarContainer = document.querySelector('#error-toast');
-                var data = {message: message};
-                snackbarContainer.MaterialSnackbar.showSnackbar(data);  
-              },
-              complete: function() {
-              }
-            })
-          }
+              var snackbarContainer = document.querySelector('#error-toast');
+              var data = {message: message};
+              snackbarContainer.MaterialSnackbar.showSnackbar(data);  
+            },
+            complete: function() {
+            }
+          })
         }
 
         self.preservables = []
