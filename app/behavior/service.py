@@ -1,4 +1,4 @@
-from flask import g, make_response, request
+from flask import g, make_response, request, redirect
 from lumavate_service_util import get_lumavate_request, LumavateRequest, SecurityAssertion
 from lumavate_properties import Properties, Components
 from lumavate_exceptions import ApiException, ValidationException
@@ -20,6 +20,9 @@ class Service():
 
   def get_s3(self):
     return boto3.resource('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
+
+  def get_s3_client(self):
+    return boto3.client('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
 
   def get_bucket(self):
     return os.environ.get('BUCKET_NAME')
@@ -172,26 +175,106 @@ class Service():
 
     return 'Ok'
 
+  def get_presign_url(self, method, path=''):
+
+    content_type = request.get_json()['contentType']
+    prefix = self.get_prefix()
+    file = ''
+
+    if method == 'POST':
+      file = prefix + request.get_json()['file'] + '/'
+      files = self.get_all()
+      if next((x for x in files if x['name'] == request.get_json()['file']), None) is not None:
+        raise ValidationException('File already exists')
+    else:
+      file = prefix + path + '/'
+
+    s3_client =  self.get_s3_client()
+    metadata = {
+      'author': g.token_data.get('user'),
+      'containerversionid': str(g.token_data.get('containerVersionId'))
+    }
+    metadata_presign = {
+      'x-amz-meta-author': g.token_data.get('user'),
+      'x-amz-meta-containerversionid': str(g.token_data.get('containerVersionId'))
+    }
+    #Generate presigned post url good for 3 minutes for upload
+    response = s3_client.generate_presigned_post(
+        Bucket=self.get_bucket(),
+        Key= file + 'draft',
+        Fields=metadata_presign,
+        Conditions=[
+            ['eq', '$Content-Type', content_type],
+            {'success_action_status':'201'},
+            {'x-amz-meta-author': g.token_data.get('user')},
+            {'x-amz-meta-containerversionid': str(g.token_data.get('containerVersionId'))},
+        ],
+        ExpiresIn=60*15)
+
+    #go ahead and create folder and empty production version
+    if method == 'POST':
+      s3 = self.get_s3()
+      s3.Object(self.get_bucket(), file).put()
+      s3.Object(self.get_bucket(), file + 'production').put(Body=b'', Metadata=metadata, ContentType=content_type)
+
+    return response
+
+  def get_file(self,s3, file, max_size=5242880):
+    res_file = {}
+    s3_client = self.get_s3_client()
+    obj = None
+
+    try:
+      obj = s3_client.head_object(Bucket=self.get_bucket(), Key=file)
+    except: 
+      pass
+
+    if obj is None:
+      return None
+    else:
+      if obj['ETag'] == request.headers.get('If-None-Match', ''):
+        res_file['match'] = True
+        return res_file
+
+      if max_size is not None and obj.get('ContentLength', 0) > max_size:
+        try:
+          response = s3_client.generate_presigned_url('get_object',
+            Params={
+              'Bucket': self.get_bucket(),
+              'Key': file,
+            },
+            HttpMethod="GET",
+            ExpiresIn=30)
+
+          res_file['url'] = response
+          return res_file
+        except:
+          return None 
+      else:
+        res_file['file'] = s3.Object(self.get_bucket(), file).get()
+        return res_file
+    
   def get_contents(self, path, version):
     s3 = self.get_s3()
     prefix = self.get_prefix()
     file = prefix + path + '/' + version
     obj = None
+    file_obj = None
     should_translate = False
 
     try:
-      obj = s3.Object(self.get_bucket(), file).get()
+      file_obj = self.get_file(s3, file)
     except:
       pass
 
-    if obj is None:
+    if file_obj is None:
       file = prefix + path + ".j2/" + version
 
       try:
-        print(file, flush=True)
-        obj = s3.Object(self.get_bucket(), file).get()
+        file_obj = self.get_file(s3, file, max_size=None)
+        obj = file_obj.get('file', None)
 
-        if obj['ETag'] == request.headers.get('If-None-Match', ''):
+        if file_obj.get('match', False):
           return '', 304
         else:
           contents = obj['Body'].read(obj['ContentLength']).decode('UTF-8')
@@ -212,9 +295,12 @@ class Service():
       except Exception as e: 
         return None
 
-    if obj['ETag'] == request.headers.get('If-None-Match', ''):
+    elif file_obj.get('match', False):
       return '', 304
+    elif file_obj.get('url', None) is not None:
+      return redirect(file_obj.get('url'), 302)
     else:
+      obj= file_obj.get('file')
       contents = obj['Body'].read(obj['ContentLength'])
       r = make_response(contents)
       r.headers["Content-Type"] = obj['ContentType']
