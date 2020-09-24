@@ -77,4 +77,4 @@ COPY ./app /app
 
 ENV APP_SETTINGS config/dev.cfg
 
-CMD gunicorn app:app -b 0.0.0.0:5000 --workers 4 --worker-class eventlet --reload
+CMD gunicorn app:app -b 0.0.0.0:5000 --workers 4 --worker-class eventlet 
